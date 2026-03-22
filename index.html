@@ -502,78 +502,91 @@
     return false;
   });
 
-  $('section').on('mousemove touchmove', function (e) {
-    if (!leg.dragged) {
-      return;
+$('section').on('mousemove touchmove', function(e) {
+  if (!leg.dragged) {
+    return;
+  }
+
+  var px = e.pageX;
+  var py = e.pageY;
+
+  if (e.type == 'touchmove') {
+    if (!leg.touch) {
+      return false;
     }
-    var px = e.pageX;
-    var py = e.pageY;
-    if (e.type == 'touchmove') {
-      if (!leg.touch) {
-        return false;
-      }
-      px = e.touches[0].pageX;
-      py = e.touches[0].pageY;
-    } else {
-      if (leg.touch) {
-        return false;
-      }
+    px = e.touches[0].pageX;
+    py = e.touches[0].pageY;
+  } else {
+    if (leg.touch) {
+      return false;
     }
-    var s = $('section').height();
-    var l = px - leg.dragX + ($('section').width() - $('main').width()) / 2;
-    var t = py - leg.dragY;
-    l = Math.min(l, s);
-    l = Math.max(l, 0);
-    t = Math.min(t, s);
-    t = Math.max(t, 0.55 * s);
-    $('#leg').css({
-      left: String(l) + 'px',
-      top: String(t) + 'px',
-      webkitTransform: 'rotate(' + String(14 * (l - s / 2) / s) + 'deg)',
-      transform: 'rotate(' + String(14 * (l - s / 2) / s) + 'deg)'
-    });
-    var tnow = Date.now();
-    var frame = (tnow - leg.lastT) / 1000;
-    leg.lastT = tnow;
-    leg.dx = frame * (leg.dx + (px - leg.pageX)) / 2;
-    leg.dy = frame * (leg.dy + (py - leg.pageY)) / 2;
-    leg.pageX = px;
-    leg.pageY = py;
-    var bo = $('#ball').offset();
-    var br = $('#ball').width() / 2;
-    bo.left += br;
-    bo.top += br;
-    var to = $('#toe').offset();
-    if ((leg.dy < 0) &&
-        (Math.pow(bo.left - to.left, 2) + Math.pow(bo.top - to.top, 2) < Math.pow(0.85 * br, 2))) {
-      attempts++;
-      leg.dragged = false;
-      $('#leg').addClass('done');
-      $('section h2').hide();
-      ball.dx = 1000 * leg.dx / br;
-      ball.dy = -1000 * leg.dy / br;
-      ball.dy = Math.min(ball.dy, 20);
-      ball.dy = Math.max(ball.dy, 0.7);
-      ball.dz = Math.pow(ball.dx * ball.dx + ball.dy * ball.dy, 0.7);
-      ball.dz = Math.min(ball.dz, 20);
-      ball.spin = 3 * ball.dz * (bo.left - to.left) / br;
-      if ((ball.spin <= 0) && (ball.spin > -1)) {
-        ball.spin = -1;
-      }
-      if ((ball.spin > 0) && (ball.spin < 1)) {
-        ball.spin = 1;
-      }
-      ball.spin = Math.max(ball.spin, -10);
-      ball.spin = Math.min(ball.spin, 10);
-      var vol = Math.min(ball.dz / 15, 1);
-      var kick = fx.play('kick');
-      fx.volume(vol, kick);
-      vol = Math.min(vol * ball.dy / 15, 1);
-      var whoosh = fx.play('whoosh');
-      fx.volume(vol, whoosh);
-    }
-    return false;
+  }
+
+  var s = $('section').height();
+  var l = px - leg.dragX + ($('section').width() - $('main').width()) / 2;
+  var t = py - leg.dragY;
+  l = Math.min(l, s);
+  l = Math.max(l, 0);
+  t = Math.min(t, s);
+  t = Math.max(t, 0.55 * s);
+
+  $('#leg').css({
+    left: String(l) + 'px',
+    top: String(t) + 'px',
+    webkitTransform: 'rotate(' + String(14 * (l - s / 2) / s) + 'deg)',
+    transform: 'rotate(' + String(14 * (l - s / 2) / s) + 'deg)'
   });
+
+  var tnow = Date.now();
+  var frame = (tnow - leg.lastT) / 1000;
+  leg.lastT = tnow;
+  leg.dx = frame * (leg.dx + (px - leg.pageX)) / 2;
+  leg.dy = frame * (leg.dy + (py - leg.pageY)) / 2;
+  leg.pageX = px;
+  leg.pageY = py;
+
+  var bo = $('#ball').offset();
+  var br = $('#ball').width() / 2;
+  bo.left += br;
+  bo.top += br;
+  var to = $('#toe').offset();
+
+  if ((leg.dy < 0) &&
+      (Math.pow(bo.left - to.left, 2) + Math.pow(bo.top - to.top, 2) < Math.pow(0.85 * br, 2))) {
+    attempts++;
+    leg.dragged = false;
+    $('#leg').addClass('done');
+    $('section h2').hide();
+
+    // 🔁 CHANGE BALL SPRITE ON EVERY KICK
+    setRandomBallSprite();
+
+    ball.dx = 1000 * leg.dx / br;
+    ball.dy = -1000 * leg.dy / br;
+    ball.dy = Math.min(ball.dy, 20);
+    ball.dy = Math.max(ball.dy, 0.7);
+    ball.dz = Math.pow(ball.dx * ball.dx + ball.dy * ball.dy, 0.7);
+    ball.dz = Math.min(ball.dz, 20);
+    ball.spin = 3 * ball.dz * (bo.left - to.left) / br;
+    if ((ball.spin <= 0) && (ball.spin > -1)) {
+      ball.spin = -1;
+    }
+    if ((ball.spin > 0) && (ball.spin < 1)) {
+      ball.spin = 1;
+    }
+    ball.spin = Math.max(ball.spin, -10);
+    ball.spin = Math.min(ball.spin, 10);
+    var vol = Math.min(ball.dz / 15, 1);
+    var kick = fx.play('kick');
+    fx.volume(vol, kick);
+    vol = Math.min(vol * ball.dy / 15, 1);
+    var whoosh = fx.play('whoosh');
+    fx.volume(vol, whoosh);
+  }
+
+  return false;
+});
+
 
   $(document).on('touchend touchcancel mouseup', function () {
     leg.dragged = false;
